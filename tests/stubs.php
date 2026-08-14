@@ -10,9 +10,24 @@ declare(strict_types=1);
  * tests run inside a real Nextcloud (the real OCP interfaces win there).
  */
 
+namespace OCP\AppFramework {
+    class App {
+        public function __construct(string $appName, array $urlParams = []) {}
+    }
+}
+
 namespace OCP\AppFramework\Utility {
     interface ITimeFactory {
         public function getTime(): int;
+    }
+}
+
+namespace OCP\AppFramework\Bootstrap {
+    interface IBootstrap {}
+    interface IBootContext {}
+    interface IRegistrationContext {
+        public function registerEventListener(string $event, string $listener): void;
+        public function registerNotifierService(string $notifier): void;
     }
 }
 
@@ -83,8 +98,13 @@ namespace OCP\Share {
 
 namespace OCP\Share\Events {
     class ShareCreatedEvent extends \OCP\EventDispatcher\Event {
-        public function __construct(private \OCP\Share\IShare $share) { parent::__construct(); }
-        public function getShare(): \OCP\Share\IShare { return $this->share; }
+        private \OCP\Share\IShare $share;
+        public function __construct(\OCP\Share\IShare $share) {
+            $this->share = $share;
+        }
+        public function getShare(): \OCP\Share\IShare {
+            return $this->share;
+        }
     }
 }
 

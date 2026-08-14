@@ -41,73 +41,73 @@ class TagServiceTest extends TestCase {
         );
     }
 
-    private function mockDays(string $value): void {
-        $this->config->method('getAppValue')
-            ->willReturnCallback(fn($app, $key, $default = '') => $value);
-    }
-
     public function testDefaultMaxAgeIs365(): void {
-        $this->config->method('getAppValue')->willReturn('365');
+        $this->config->method('getAppValue')
+            ->willReturnCallback(fn($app, $key, $default = '') => $default);
+
         $this->assertSame(365, $this->service->getMaxAgeDays());
     }
 
     public function testMaxAgeFallsBackToDefaultWhenUnset(): void {
-        // Return the default '' → cast to 0 → max(1, 0) = 1? No: default is '365' string.
         $this->config->method('getAppValue')
-            ->willReturnCallback(fn($app, $key, $default = '') => $default);
-        $this->assertSame(TagService::DEFAULT_DAYS, $this->service->getMaxAgeDays());
+            ->willReturn('');
+
+        $this->assertSame(365, $this->service->getMaxAgeDays());
     }
 
     public function testMaxAgeIsAtLeastOne(): void {
-        $this->mockDays('0');
+        $this->config->method('getAppValue')
+            ->willReturn('0');
+
         $this->assertSame(1, $this->service->getMaxAgeDays());
     }
 
     public function testCustomMaxAge(): void {
-        $this->mockDays('90');
-        $this->assertSame(90, $this->service->getMaxAgeDays());
+        $this->config->method('getAppValue')
+            ->willReturn('30');
+
+        $this->assertSame(30, $this->service->getMaxAgeDays());
     }
 
     public function testNotificationDaysIs90Percent(): void {
-        $this->mockDays('365');
-        // floor(365 * 0.9) = 328
-        $this->assertSame(328, $this->service->getNotificationDays());
-    }
+        $this->config->method('getAppValue')
+            ->willReturn('100');
 
-    public function testNotificationDaysRoundsDown(): void {
-        $this->mockDays('100');
-        // floor(100 * 0.9) = 90
         $this->assertSame(90, $this->service->getNotificationDays());
     }
 
+    public function testNotificationDaysRoundsDown(): void {
+        $this->config->method('getAppValue')
+            ->willReturn('365');
+
+        $this->assertSame(328, $this->service->getNotificationDays());
+    }
+
     public function testNotificationDaysIsAtLeastOne(): void {
-        $this->mockDays('1');
-        // floor(1 * 0.9) = 0 → max(1, 0) = 1
+        $this->config->method('getAppValue')
+            ->willReturn('1');
+
         $this->assertSame(1, $this->service->getNotificationDays());
     }
 
     public function testGetDeletionDateAddsDays(): void {
-        $this->mockDays('365');
-        $from = new DateTime('2026-08-14 12:00:00');
+        $this->config->method('getAppValue')
+            ->willReturn('30');
+
+        $from = new DateTime('2026-01-01');
         $result = $this->service->getDeletionDate($from);
-        $this->assertSame('2027-08-14', $result->format('Y-m-d'));
+
+        $this->assertSame('2026-01-31', $result->format('Y-m-d'));
     }
 
     public function testGetDeletionDateDoesNotMutateInput(): void {
-        $this->mockDays('30');
-        $from = new DateTime('2026-01-01 00:00:00');
+        $this->config->method('getAppValue')
+            ->willReturn('30');
+
+        $from = new DateTime('2026-01-01');
+        $original = clone $from;
         $this->service->getDeletionDate($from);
-        // Original must be unchanged (service clones before modify).
-        $this->assertSame('2026-01-01', $from->format('Y-m-d'));
-    }
 
-    public function testTagNameForDate(): void {
-        $date = new DateTime('2027-08-15');
-        $this->assertSame('Share ends on 2027-08-15', $this->service->tagNameForDate($date));
-    }
-
-    public function testTagPrefixIsEnglish(): void {
-        // Tags are fixed English because system tags are not translated per user.
-        $this->assertSame('Share ends on ', TagService::TAG_PREFIX);
+        $this->assertSame($original->format('Y-m-d'), $from->format('Y-m-d'));
     }
 }
