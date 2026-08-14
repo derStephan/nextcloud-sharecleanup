@@ -16,7 +16,9 @@ on:
 # Cancel superseded runs on the same branch/PR.
 concurrency:
   group: tests-${{ github.ref }}
-  cancel-in-progress: true
+  # Only cancel on PRs, not on main — main runs must complete
+  # so that bump-nextcloud can react to green tests
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # ------------------------------------------------------------------

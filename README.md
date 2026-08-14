@@ -55,7 +55,7 @@ When a user shares a file or folder, Share Cleanup:
 
 ```bash
 # Extract into your Nextcloud apps directory
-tar -xzf sharecleanup-1.0.1.tar.gz -C /var/www/nextcloud/apps/
+tar -xzf sharecleanup-1.2.1.tar.gz -C /var/www/nextcloud/apps/
 
 # Set ownership (adjust user for your setup)
 chown -R www-data:www-data /var/www/nextcloud/apps/sharecleanup
@@ -127,7 +127,41 @@ GitHub Actions run the checks automatically on every push and pull request
 * **Lint** — PHP syntax check across PHP 8.1–8.4
 * **PHPUnit** — unit tests with OCP stubs, across PHP 8.1–8.4
 * **Integration** — unit tests against a real Nextcloud server checkout
+  (currently `stable33` and `stable34`)
 * **App info** — validates `appinfo/info.xml`
+* **Code coverage** — uploads coverage to [Codecov](https://codecov.io/gh/derStephan/nextcloud-sharecleanup)
+  on every push to `main`
+
+**Concurrency:** On pull requests, new pushes cancel in-progress runs to
+save resources. On `main`, runs always complete — this ensures the
+bump-nextcloud workflow can react to green test results.
+
+### Automatic Nextcloud version tracking
+
+A scheduled workflow (`bump-nextcloud.yml`) checks **weekly** (or manually
+via `workflow_dispatch`) for new Nextcloud server releases. When a new major
+version is published (e.g. NC 35):
+
+1. `appinfo/info.xml` — `max-version` is bumped to the new version
+2. `.github/workflows/tests.yml` — the integration test matrix is updated
+   to test against the **previous and the new stable version**
+   (e.g. `stable34` + `stable35`, dropping `stable33`)
+3. Both changes are committed and pushed automatically with `[skip ci]`
+   to avoid triggering a new test run
+
+This means the app always declares compatibility with the latest Nextcloud
+release and tests against it — no manual intervention needed.
+
+### Release process
+
+Releases are **gated behind green tests**: the release workflow
+(`release.yml`) only runs after the test workflow completes successfully.
+If any test fails, no release is created.
+
+Releases are **semantic**: the workflow analyzes commit messages since the
+last tag (`feat:` → minor, `fix:` → patch, `BREAKING CHANGE` / `!:` → major),
+updates the version in `info.xml`, builds a tarball, creates a Git tag,
+and publishes a GitHub Release with the archive attached.
 
 ## Contributing
 

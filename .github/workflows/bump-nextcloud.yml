@@ -6,11 +6,6 @@ on:
     - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
   # Also trigger manually
   workflow_dispatch:
-  # Trigger when Tests workflow completes successfully
-  workflow_run:
-    workflows: ["Tests"]
-    types: [completed]
-    branches: [main, master]
 
 permissions:
   contents: write
@@ -19,11 +14,7 @@ jobs:
   bump:
     name: Auto-bump max-version
     runs-on: ubuntu-latest
-    # Only run on schedule, manual dispatch, or when Tests succeeded
-    if: |
-      github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    # Only run on schedule or manual dispatch
 
     steps:
       - name: Checkout
@@ -75,24 +66,35 @@ jobs:
             echo "No major jump (diff: $DIFF)"
           fi
 
-      - name: Bump max-version and commit
+      - name: Bump max-version and test matrix, then commit
         if: ${{ steps.jump.outputs.is_major_jump == 'true' }}
         run: |
           LATEST="${{ steps.nc.outputs.latest }}"
+          PREVIOUS=$((LATEST - 1))
           
-          # Update info.xml
+          # 1) Update info.xml max-version
           sed -i "s/max-version=\"*\"/max-version=\"$LATEST\"/" appinfo/info.xml
-          
-          # Verify change
+          echo "=== info.xml ==="
           grep 'max-version' appinfo/info.xml
           
-          # Configure git
+          # 2) Update tests.yml integration matrix:
+          #    keep only the previous and the new stable version
+          OLD_MATRIX=$(grep -oP "nextcloud: \[\K[^]]+" .github/workflows/tests.yml)
+          echo "Current matrix: $OLD_MATRIX"
+          
+          # Build new matrix with previous + latest
+          NEW_MATRIX="'stable$PREVIOUS', 'stable$LATEST'"
+          sed -i "s/nextcloud: \[[^]]*\]/nextcloud: [$NEW_MATRIX]/" .github/workflows/tests.yml
+          
+          echo "=== tests.yml matrix ==="
+          grep "nextcloud:" .github/workflows/tests.yml
+          
+          # 3) Commit and push
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           
-          # Commit and push directly to main
-          git add appinfo/info.xml
-          git commit -m "chore: bump Nextcloud max-version to $LATEST [skip ci]"
+          git add appinfo/info.xml .github/workflows/tests.yml
+          git commit -m "chore: bump Nextcloud max-version to $LATEST and update test matrix to stable$PREVIOUS/stable$LATEST [skip ci]"
           git push origin HEAD:${{ github.ref_name }}
           
-          echo "Successfully bumped max-version to $LATEST and pushed to ${{ github.ref_name }}"
+          echo "Successfully bumped max-version to $LATEST and updated test matrix to stable$PREVIOUS/stable$LATEST"
