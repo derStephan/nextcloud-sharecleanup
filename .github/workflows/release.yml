@@ -8,6 +8,12 @@ on:
     branches: [main, master]
   # Also allow manual trigger
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force release even if no worthy commits found'
+        required: false
+        default: 'false'
+        type: string
 
 permissions:
   contents: write
@@ -62,10 +68,24 @@ jobs:
             elif [ "$FIXES" -gt 0 ]; then
               NEXT="${MAJOR}.${MINOR}.$((PATCH + 1))"
             else
-              # No relevant commits, skip release
-              echo "skip=true" >> "$GITHUB_OUTPUT"
-              echo "No release-worthy commits found"
-              exit 0
+              # No relevant commits — check if we should release anyway
+              if [ "${{ github.event.inputs.force }}" = "true" ] || \
+                 [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+                # Manual trigger or forced: release current version
+                NEXT="${{ steps.current.outputs.current }}"
+                echo "Manual/forced release of current version: $NEXT"
+              else
+                # Check if info.xml was modified in the last commit
+                INFO_CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -c "appinfo/info.xml" || echo "0")
+                if [ "$INFO_CHANGED" -gt 0 ]; then
+                  NEXT="${{ steps.current.outputs.current }}"
+                  echo "info.xml changed, releasing current version: $NEXT"
+                else
+                  echo "skip=true" >> "$GITHUB_OUTPUT"
+                  echo "No release-worthy commits found"
+                  exit 0
+                fi
+              fi
             fi
           fi
           
