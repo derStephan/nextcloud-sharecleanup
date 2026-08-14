@@ -55,7 +55,7 @@ When a user shares a file or folder, Share Cleanup:
 
 ```bash
 # Extract into your Nextcloud apps directory
-tar -xzf sharecleanup-1.2.1.tar.gz -C /var/www/nextcloud/apps/
+tar -xzf sharecleanup-1.4.0.tar.gz -C /var/www/nextcloud/apps/
 
 # Set ownership (adjust user for your setup)
 chown -R www-data:www-data /var/www/nextcloud/apps/sharecleanup
@@ -127,7 +127,8 @@ GitHub Actions run the checks automatically on every push and pull request
 * **Lint** — PHP syntax check across PHP 8.2–8.5
 * **PHPUnit** — unit tests with OCP stubs, across PHP 8.2–8.5
 * **Integration** — unit tests against a real Nextcloud server checkout
-  (currently `stable33` and `stable34`)
+  (currently `stable33` and `stable34`). Runs on push to `main` and manually
+  via `workflow_dispatch`.
 * **App info** — validates `appinfo/info.xml`
 * **Code coverage** — uploads coverage to [Codecov](https://codecov.io/gh/derStephan/nextcloud-sharecleanup)
   on every push to `main`
@@ -146,11 +147,16 @@ version is published (e.g. NC 35):
 2. `.github/workflows/tests.yml` — the integration test matrix is updated
    to test against the **previous and the new stable version**
    (e.g. `stable34` + `stable35`, dropping `stable33`)
-3. Both changes are committed and pushed automatically with `[skip ci]`
+3. `.github/workflows/tests.yml` — the PHP version matrix is updated
+   to match the PHP versions supported by the new Nextcloud release
+   (fetched automatically from the official Nextcloud documentation)
+4. `README.md` — version numbers and requirements are updated automatically
+5. All changes are committed and pushed automatically with `[skip ci]`
    to avoid triggering a new test run
 
 This means the app always declares compatibility with the latest Nextcloud
-release and tests against it — no manual intervention needed.
+release and tests against it with the correct PHP versions — no manual
+intervention needed.
 
 ### Release process
 

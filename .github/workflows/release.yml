@@ -89,6 +89,15 @@ jobs:
           sed -i "s/<version>.*<\/version>/<version>$NEXT<\/version>/" appinfo/info.xml
           grep '<version>' appinfo/info.xml
 
+      - name: Update README.md with new version
+        if: ${{ steps.next.outputs.skip != 'true' }}
+        run: |
+          NEXT="${{ steps.next.outputs.next }}"
+          # Update install command with new version
+          sed -i "s/sharecleanup-[0-9]*\.[0-9]*\.[0-9]*\.tar\.gz/sharecleanup-$NEXT.tar.gz/" README.md
+          echo "=== README updated ==="
+          grep -n "sharecleanup-.*tar.gz" README.md
+
       - name: Build tarball
         if: ${{ steps.next.outputs.skip != 'true' }}
         run: |
@@ -116,7 +125,7 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add appinfo/info.xml
+          git add appinfo/info.xml README.md
           git commit -m "chore(release): ${{ steps.next.outputs.next }} [skip ci]" || echo "No changes to commit"
           git push
 
