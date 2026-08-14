@@ -28,7 +28,7 @@ Nextcloud 33 or higher.
 
 Deletions are **irreversible**. The app starts in dry-run mode — test first.
 ]]></description>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <licence>mit</licence>
     <author>derStephan</author>
     <namespace>ShareCleanup</namespace>
