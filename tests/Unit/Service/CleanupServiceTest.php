@@ -11,6 +11,7 @@ use OCA\ShareCleanup\Service\TagService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Files\IRootFolder;
 use OCP\IConfig;
+use OCP\IDBConnection;
 use OCP\IUserManager;
 use OCP\Notification\IManager as INotificationManager;
 use OCP\Share\IManager as IShareManager;
@@ -29,6 +30,7 @@ class CleanupServiceTest extends TestCase {
     private IRootFolder&MockObject $rootFolder;
     private TagService&MockObject $tagService;
     private LoggerInterface&MockObject $logger;
+    private IDBConnection&MockObject $db;
     private CleanupService $service;
 
     protected function setUp(): void {
@@ -41,6 +43,7 @@ class CleanupServiceTest extends TestCase {
         $this->rootFolder = $this->createMock(IRootFolder::class);
         $this->tagService = $this->createMock(TagService::class);
         $this->logger = $this->createMock(LoggerInterface::class);
+        $this->db = $this->createMock(IDBConnection::class);
 
         $this->service = new CleanupService(
             $this->shareManager,
@@ -50,7 +53,8 @@ class CleanupServiceTest extends TestCase {
             $this->userManager,
             $this->rootFolder,
             $this->tagService,
-            $this->logger
+            $this->logger,
+            $this->db
         );
     }
 
@@ -179,7 +183,7 @@ class CleanupServiceTest extends TestCase {
     public function testShareInNotificationWindowIsNotified(): void {
         $share = $this->createMock(IShare::class);
         $share->method('getId')->willReturn('1');
-        $share->method('getShareTime')->willReturn(new DateTime('-330 days'));
+        $share->method('getShareTime')->willReturn(new DateTime('-340 days'));
         $share->method('getExpirationDate')->willReturn(null);
         $share->method('getShareType')->willReturn(IShare::TYPE_USER);
         $share->method('getSharedBy')->willReturn('user1');

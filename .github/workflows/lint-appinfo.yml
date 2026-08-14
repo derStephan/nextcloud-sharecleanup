@@ -17,8 +17,7 @@ jobs:
 
       - name: Validate XML
         run: |
-          xmllint --noout appinfo/info.xml
-          echo "info.xml is valid XML"
+          python3 -c "import xml.dom.minidom,sys; xml.dom.minidom.parse('appinfo/info.xml'); print('info.xml is valid XML')"
 
       - name: Check required fields
         run: |

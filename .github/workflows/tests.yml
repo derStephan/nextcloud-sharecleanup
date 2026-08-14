@@ -5,6 +5,8 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  # Allow this workflow to be called by other workflows (e.g. release.yml)
+  workflow_call:
   # Trigger when a new Nextcloud major version is released
   # (detected by the bump-nextcloud workflow creating a PR)
   workflow_run:

@@ -9,6 +9,7 @@ use OCA\ShareCleanup\AppInfo\Application;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Files\IRootFolder;
 use OCP\IConfig;
+use OCP\IDBConnection;
 use OCP\IUserManager;
 use OCP\Notification\IManager as INotificationManager;
 use OCP\Share\IManager as IShareManager;
@@ -29,6 +30,7 @@ class CleanupService {
         private IRootFolder $rootFolder,
         private TagService $tagService,
         private LoggerInterface $logger,
+        private IDBConnection $db,
     ) {
     }
 
