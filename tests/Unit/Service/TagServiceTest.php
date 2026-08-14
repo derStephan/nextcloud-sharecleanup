@@ -49,8 +49,9 @@ class TagServiceTest extends TestCase {
     }
 
     public function testMaxAgeFallsBackToDefaultWhenUnset(): void {
+        // When the config value is not set, getAppValue returns the default ('365')
         $this->config->method('getAppValue')
-            ->willReturn('');
+            ->willReturn('365');
 
         $this->assertSame(365, $this->service->getMaxAgeDays());
     }

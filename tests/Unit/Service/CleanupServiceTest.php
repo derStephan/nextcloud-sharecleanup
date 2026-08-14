@@ -98,7 +98,15 @@ class CleanupServiceTest extends TestCase {
         $share->method('getNodeId')->willReturn(123);
         $share->method('getNode')->willReturn(null);
 
-        $this->shareManager->method('getAllShares')->willReturn([$share]);
+        // Return share only for TYPE_USER, empty for all other types
+        $this->shareManager->method('getAllShares')
+            ->willReturnCallback(function ($type, $includeExpired, $limit, $offset) use ($share) {
+                if ($type === IShare::TYPE_USER && $offset === 0) {
+                    return [$share];
+                }
+                return [];
+            });
+
         $this->config->method('getAppValue')
             ->willReturnCallback(function ($app, $key, $default = '') {
                 if ($key === 'max_age_days') return '365';
@@ -108,6 +116,7 @@ class CleanupServiceTest extends TestCase {
 
         $this->timeFactory->method('getTime')->willReturn(time());
 
+        // Expect exactly 1 deleteShare call (only for TYPE_USER share)
         $this->shareManager->expects($this->once())->method('deleteShare');
 
         $this->service->run();
@@ -123,7 +132,14 @@ class CleanupServiceTest extends TestCase {
         $share->method('getNodeId')->willReturn(123);
         $share->method('getNode')->willReturn(null);
 
-        $this->shareManager->method('getAllShares')->willReturn([$share]);
+        $this->shareManager->method('getAllShares')
+            ->willReturnCallback(function ($type, $includeExpired, $limit, $offset) use ($share) {
+                if ($type === IShare::TYPE_USER && $offset === 0) {
+                    return [$share];
+                }
+                return [];
+            });
+
         $this->config->method('getAppValue')
             ->willReturnCallback(function ($app, $key, $default = '') {
                 if ($key === 'max_age_days') return '365';
@@ -145,7 +161,14 @@ class CleanupServiceTest extends TestCase {
         $share->method('getExpirationDate')->willReturn(null);
         $share->method('getShareType')->willReturn(IShare::TYPE_USER);
 
-        $this->shareManager->method('getAllShares')->willReturn([$share]);
+        $this->shareManager->method('getAllShares')
+            ->willReturnCallback(function ($type, $includeExpired, $limit, $offset) use ($share) {
+                if ($type === IShare::TYPE_USER && $offset === 0) {
+                    return [$share];
+                }
+                return [];
+            });
+
         $this->config->method('getAppValue')
             ->willReturnCallback(fn($app, $key, $default = '') => $default);
 
@@ -165,7 +188,14 @@ class CleanupServiceTest extends TestCase {
         $share->method('getNodeId')->willReturn(123);
         $share->method('getNode')->willReturn(null);
 
-        $this->shareManager->method('getAllShares')->willReturn([$share]);
+        $this->shareManager->method('getAllShares')
+            ->willReturnCallback(function ($type, $includeExpired, $limit, $offset) use ($share) {
+                if ($type === IShare::TYPE_USER && $offset === 0) {
+                    return [$share];
+                }
+                return [];
+            });
+
         $this->config->method('getAppValue')
             ->willReturnCallback(function ($app, $key, $default = '') {
                 if ($key === 'max_age_days') return '365';
