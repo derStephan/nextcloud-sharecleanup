@@ -27,7 +27,7 @@ class Cleanup extends Command {
             ->addOption('force', null, InputOption::VALUE_NONE, 'Run even if dry-run is enabled in settings');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output): int {
+    public function execute(InputInterface $input, OutputInterface $output): int {
         $days = $input->getOption('days');
         $dryRun = $input->getOption('dry-run') || !$input->getOption('force');
 

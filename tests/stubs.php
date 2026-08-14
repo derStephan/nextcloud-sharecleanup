@@ -135,6 +135,11 @@ namespace OCP\Notification {
         public function createNotification(): INotification;
         public function notify(INotification $notification): void;
     }
+    interface INotifier {
+        public function getID(): string;
+        public function getName(): string;
+        public function prepare(INotification $notification, string $languageCode): INotification;
+    }
     interface INotification {
         public function setApp(string $app): self;
         public function setUser(string $user): self;
@@ -154,6 +159,8 @@ namespace OCP\Notification {
 
 
 namespace OCP\BackgroundJob {
+    use OCP\AppFramework\Utility\ITimeFactory;
+
     abstract class TimedJob {
         protected int $interval = 0;
         public function __construct(ITimeFactory $time) {}
@@ -198,7 +205,11 @@ namespace Symfony\Component\Console\Command {
 
     abstract class Command {
         protected ?string $name = null;
-        public function __construct() {}
+        protected array $options = [];
+        public function __construct() {
+            $this->configure();
+        }
+        protected function configure(): void {}
         public function setName(string $name): static {
             $this->name = $name;
             return $this;
@@ -210,13 +221,19 @@ namespace Symfony\Component\Console\Command {
             return $this;
         }
         public function addOption(string $name, $shortcut = null, int $mode = 0, string $description = '', $default = null): static {
+            $this->options[$name] = true;
             return $this;
         }
-        public function getDefinition(): array {
-            return ['days' => true, 'dry-run' => true, 'force' => true];
+        public function getDefinition(): object {
+            $options = $this->options;
+            return new class($options) {
+                public function __construct(private array $opts) {}
+                public function hasOption(string $name): bool {
+                    return isset($this->opts[$name]);
+                }
+            };
         }
-        abstract protected function configure(): void;
-        abstract protected function execute(InputInterface $input, OutputInterface $output): int;
+        abstract public function execute(InputInterface $input, OutputInterface $output): int;
     }
 }
 
