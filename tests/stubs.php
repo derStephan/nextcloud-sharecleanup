@@ -264,6 +264,37 @@ namespace Symfony\Component\Console\Output {
     }
 }
 
+
+
+namespace OCP\AppFramework\Services {
+    interface IInitialState {
+        public function provideInitialState(string $appId, string $key, $value): void;
+    }
+}
+
+namespace OCP\AppFramework\Http {
+    class TemplateResponse {
+        public function __construct(
+            private string $appId,
+            private string $template,
+        ) {}
+        public function getAppId(): string {
+            return $this->appId;
+        }
+        public function getTemplate(): string {
+            return $this->template;
+        }
+    }
+}
+
+namespace OCP\Settings {
+    interface ISettings {
+        public function getForm(): \OCP\AppFramework\Http\TemplateResponse;
+        public function getSection(): string;
+        public function getPriority(): int;
+    }
+}
+
 namespace Psr\Log {
     if (!interface_exists(LoggerInterface::class)) {
         interface LoggerInterface {

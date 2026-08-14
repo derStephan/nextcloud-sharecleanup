@@ -161,8 +161,9 @@ intervention needed.
 ### Release process
 
 Releases are **gated behind green tests**: the release workflow
-(`release.yml`) only runs after the test workflow completes successfully.
-If any test fails, no release is created.
+(`release.yml`) is triggered automatically when the test workflow
+(`tests.yml`) completes successfully on `main`. If any test fails, no
+release is created.
 
 Releases are **semantic**: the workflow analyzes commit messages since the
 last tag (`feat:` → minor, `fix:` → patch, `BREAKING CHANGE` / `!:` → major),
