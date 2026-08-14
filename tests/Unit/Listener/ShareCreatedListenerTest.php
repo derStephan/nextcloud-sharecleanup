@@ -47,21 +47,18 @@ class ShareCreatedListenerTest extends TestCase {
     }
 
     public function testSkipsShareWithOwnExpiration(): void {
-        // Shares with their own expiration date must NOT be tagged.
         $event = $this->makeEvent(new DateTime('+10 days'));
         $this->tagService->expects($this->never())->method('tagFileForShare');
         $this->listener->handle($event);
     }
 
     public function testTaggingFailureDoesNotBubbleUp(): void {
-        // A tagging error must be caught and logged, never break share creation.
         $event = $this->makeEvent(null);
         $this->tagService->method('tagFileForShare')
             ->willThrowException(new \RuntimeException('tag backend down'));
 
         $this->logger->expects($this->once())->method('error');
 
-        // Must not throw.
         $this->listener->handle($event);
         $this->addToAssertionCount(1);
     }

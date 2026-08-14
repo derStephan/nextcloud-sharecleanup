@@ -21,10 +21,7 @@ class Application extends App implements IBootstrap {
     }
 
     public function register(IRegistrationContext $context): void {
-        // Tag newly created shares with the end date of the share.
         $context->registerEventListener(ShareCreatedEvent::class, ShareCreatedListener::class);
-
-        // Register the notification provider for advance end-of-share warnings.
         $context->registerNotifierService(Notifier::class);
     }
 

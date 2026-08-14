@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 /**
  * Minimal OCP stubs for standalone unit testing without a Nextcloud checkout.
- *
- * These are intentionally tiny: they only declare the interfaces/classes our
- * code type-hints against, so PHPUnit can mock them. They are NOT used when the
- * tests run inside a real Nextcloud (the real OCP interfaces win there).
  */
 
 namespace OCP\AppFramework {

@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace OCA\ShareCleanup\Notification;
 
 use OCA\ShareCleanup\AppInfo\Application;
-use OCP\IURLGenerator;
 use OCP\L10N\IFactory;
 use OCP\Notification\INotification;
 use OCP\Notification\INotifier;
-use OCP\Notification\UnknownNotificationException;
+use OCP\IURLGenerator;
 
 class Notifier implements INotifier {
 
@@ -29,14 +28,10 @@ class Notifier implements INotifier {
 
     public function prepare(INotification $notification, string $languageCode): INotification {
         if ($notification->getApp() !== Application::APP_ID) {
-            throw new UnknownNotificationException();
+            throw new \InvalidArgumentException('Unknown app');
         }
 
         $l = $this->l10nFactory->get(Application::APP_ID, $languageCode);
-
-        if ($notification->getSubject() !== 'expiring_share') {
-            throw new UnknownNotificationException();
-        }
 
         $params = $notification->getSubjectParameters();
         $file = $params['file'] ?? '';

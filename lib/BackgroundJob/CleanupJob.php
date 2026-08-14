@@ -10,11 +10,12 @@ use OCP\BackgroundJob\TimedJob;
 
 class CleanupJob extends TimedJob {
 
-    public function __construct(ITimeFactory $time, private CleanupService $cleanupService) {
+    public function __construct(
+        ITimeFactory $time,
+        private CleanupService $cleanupService,
+    ) {
         parent::__construct($time);
-        // Run once per hour; Nextcloud cron decides the actual cadence.
-        $this->setInterval(3600);
-        $this->setTimeSensitivity(self::TIME_INSENSITIVE);
+        $this->setInterval(3600); // hourly
     }
 
     protected function run($argument): void {

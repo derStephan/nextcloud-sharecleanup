@@ -14,7 +14,7 @@ Thumbs.db
 *.zip
 node_modules/
 
-# Dependencies & test cache (composer.lock SHOULD be committed for reproducible builds)
+# Dependencies & test cache
 vendor/
 .phpunit.cache/
 .phpunit.result.cache

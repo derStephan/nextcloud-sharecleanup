@@ -77,7 +77,46 @@ jobs:
         run: vendor/bin/phpunit --colors=always
 
   # ------------------------------------------------------------------
-  # 3. PHPUnit against real Nextcloud (integration)
+  # 3. Code coverage (single PHP version, uploads to Codecov)
+  # ------------------------------------------------------------------
+  coverage:
+    name: Code coverage
+    runs-on: ubuntu-latest
+    needs: lint
+    # Only run on push to main/master, not on PRs (saves resources)
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP with PCOV
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: pcov
+          ini-values: pcov.directory=lib
+
+      - name: Validate composer.json
+        run: composer validate --no-check-publish
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Run tests with coverage
+        run: vendor/bin/phpunit --coverage-clover=coverage.xml --colors=always
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  # ------------------------------------------------------------------
+  # 4. PHPUnit against real Nextcloud (integration)
   #    Only runs when triggered by a new Nextcloud major version
   #    (via workflow_run from bump-nextcloud.yml) or manually.
   # ------------------------------------------------------------------

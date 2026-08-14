@@ -40,62 +40,6 @@ class CleanupService {
         ) === 'yes';
     }
 
-    /**
-     * Discovers the share types that actually exist in the oc_share table.
-     *
-     * Because the query runs against the central share table, newly installed
-     * apps (or newer Nextcloud versions) that introduce additional *file share
-     * types* are picked up automatically — no code change needed here.
-     *
-     * This covers real *file shares* only (including Talk and Deck). App-internal
-     * sharing that is not a file share (e.g. a Polls survey link) lives outside
-     * the oc_share table and cannot be handled by any share-based app.
-     *
-     * Fallback is the list of IShare::TYPE_* constants of the running version.
-     *
-     * @return int[]
-     */
-    public function discoverShareTypes(): array {
-        try {
-            $qb = $this->db->getQueryBuilder();
-            $qb->selectDistinct('share_type')->from('share');
-            $result = $qb->executeQuery();
-
-            $types = [];
-            while (($row = $result->fetch()) !== false) {
-                $types[] = (int)$row['share_type'];
-            }
-            $result->closeCursor();
-
-            if (count($types) > 0) {
-                return $types;
-            }
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'ShareCleanup: could not discover share types from database ({msg}); falling back to known types',
-                ['msg' => $e->getMessage(), 'app' => 'sharecleanup']
-            );
-        }
-
-        // Fallback: every IShare::TYPE_* constant of the running Nextcloud version.
-        $types = [];
-        foreach ((new \ReflectionClass(IShare::class))->getConstants() as $name => $value) {
-            if (str_starts_with($name, 'TYPE_') && is_int($value)) {
-                $types[] = $value;
-            }
-        }
-        return $types;
-    }
-
-    /**
-     * Sends advance notifications, ends expired shares and cleans up orphaned tags.
-     *
-     * Shares with their own expiration date are skipped entirely.
-     *
-     * @param int|null  $daysOverride    Override configured max age for this run
-     * @param bool|null $dryRunOverride  Override configured dry-run mode for this run
-     * @return array{scanned: int, skipped_expiry: int, notified: int, ended: int, tags_removed: int, failed: int}
-     */
     public function run(?int $daysOverride = null, ?bool $dryRunOverride = null): array {
         $maxAgeDays = $daysOverride !== null ? max(1, $daysOverride) : $this->tagService->getMaxAgeDays();
         $notifyDays = max(1, (int)floor($maxAgeDays * 0.9));
@@ -121,8 +65,6 @@ class CleanupService {
         $stats = ['scanned' => 0, 'skipped_expiry' => 0, 'notified' => 0, 'ended' => 0, 'tags_removed' => 0, 'failed' => 0];
 
         foreach ($shareTypes as $type) {
-            // Phase 1: collect candidate shares WITHOUT touching anything,
-            // so pagination offsets do not shift while we work.
             $candidates = [];
 
             $offset = 0;
@@ -149,7 +91,6 @@ class CleanupService {
                 foreach ($shares as $share) {
                     $stats['scanned']++;
 
-                    // Never touch shares that carry their own expiration date.
                     if ($share->getExpirationDate() !== null) {
                         $stats['skipped_expiry']++;
                         continue;
@@ -168,12 +109,11 @@ class CleanupService {
                 }
 
                 if (count($shares) < $limit) {
-                    break; // last page
+                    break;
                 }
                 $offset += $limit;
             }
 
-            // Phase 2: act on the collected candidates.
             foreach ($candidates as $candidate) {
                 $share = $candidate['share'];
                 if ($candidate['action'] === 'end') {
@@ -184,26 +124,89 @@ class CleanupService {
             }
         }
 
-        // Remove all of our tags whose date lies in the past
-        // (single mechanism — covers shares ended by this app or deleted manually).
-        if (!$dryRun) {
-            $stats['tags_removed'] = $this->tagService->cleanupPastTags();
-        }
+        $stats['tags_removed'] = $this->tagService->cleanupPastTags();
 
         $this->logger->info(
-            'ShareCleanup: run finished (scanned: {s}, skipped (own expiry): {se}, notified: {n}, shares ended: {d}, tags removed: {tr}, failed: {f})',
+            'ShareCleanup: run finished (scanned: {scanned}, skipped expiry: {skipped}, notified: {notified}, ended: {ended}, tags removed: {tags}, failed: {failed})',
             [
-                's' => $stats['scanned'],
-                'se' => $stats['skipped_expiry'],
-                'n' => $stats['notified'],
-                'd' => $stats['ended'],
-                'tr' => $stats['tags_removed'],
-                'f' => $stats['failed'],
+                'scanned' => $stats['scanned'],
+                'skipped' => $stats['skipped_expiry'],
+                'notified' => $stats['notified'],
+                'ended' => $stats['ended'],
+                'tags' => $stats['tags_removed'],
+                'failed' => $stats['failed'],
                 'app' => 'sharecleanup',
             ]
         );
 
         return $stats;
+    }
+
+    public function discoverShareTypes(): array {
+        try {
+            $qb = $this->db->getQueryBuilder();
+            $qb->selectDistinct('share_type')->from('share');
+            $result = $qb->executeQuery();
+
+            $types = [];
+            while (($row = $result->fetch()) !== false) {
+                $types[] = (int)$row['share_type'];
+            }
+            $result->closeCursor();
+
+            if (count($types) > 0) {
+                return $types;
+            }
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                'ShareCleanup: could not discover share types from database ({msg}); falling back to known types',
+                ['msg' => $e->getMessage(), 'app' => 'sharecleanup']
+            );
+        }
+
+        $types = [];
+        foreach ((new \ReflectionClass(IShare::class))->getConstants() as $name => $value) {
+            if (str_starts_with($name, 'TYPE_') && is_int($value)) {
+                $types[] = $value;
+            }
+        }
+        return $types;
+    }
+
+    private function expireShare(IShare $share, int $maxAgeDays, bool $dryRun, array &$stats): void {
+        $shareId = $share->getId();
+        $fileName = $this->resolveFileName($share);
+
+        $desc = sprintf(
+            'share id=%s type=%d file="%s" sharedBy=%s created=%s',
+            $shareId,
+            $share->getShareType(),
+            $fileName,
+            $share->getSharedBy(),
+            $share->getShareTime()->format(DateTime::ATOM)
+        );
+
+        if ($dryRun) {
+            $this->logger->warning(
+                'ShareCleanup [dry-run]: would end ' . $desc,
+                ['app' => 'sharecleanup']
+            );
+            $stats['ended']++;
+            return;
+        }
+
+        try {
+            $this->shareManager->deleteShare($share);
+            $this->config->deleteAppValue(Application::APP_ID, self::PREFIX_NOTIFIED . $shareId);
+            $this->logger->warning('ShareCleanup: ended ' . $desc, ['app' => 'sharecleanup']);
+            $stats['ended']++;
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'ShareCleanup: failed to end share {id}: {msg}',
+                ['id' => $shareId, 'msg' => $e->getMessage(), 'app' => 'sharecleanup']
+            );
+            $stats['failed']++;
+        }
     }
 
     private function notifyShare(IShare $share, int $maxAgeDays, bool $dryRun, array &$stats): void {
@@ -214,7 +217,6 @@ class CleanupService {
             return;
         }
 
-        // Send the advance notice exactly once per share.
         if ($this->config->getAppValue(Application::APP_ID, self::PREFIX_NOTIFIED . $shareId, '') === 'yes') {
             return;
         }
@@ -248,9 +250,8 @@ class CleanupService {
                     'file' => $fileName,
                     'date' => $endDate->format('Y-m-d'),
                 ]);
-            $this->notificationManager->notify($notification);
 
-            // Mark as notified BEFORE waiting for the next run (idempotency).
+            $this->notificationManager->notify($notification);
             $this->config->setAppValue(Application::APP_ID, self::PREFIX_NOTIFIED . $shareId, 'yes');
 
             $this->logger->info(
@@ -260,56 +261,13 @@ class CleanupService {
             $stats['notified']++;
         } catch (\Throwable $e) {
             $this->logger->error(
-                'ShareCleanup: failed to notify {user} about share {id}: {msg}',
-                ['user' => $sharer, 'id' => $shareId, 'msg' => $e->getMessage(), 'app' => 'sharecleanup']
+                'ShareCleanup: failed to notify about share {id}: {msg}',
+                ['id' => $shareId, 'msg' => $e->getMessage(), 'app' => 'sharecleanup']
             );
             $stats['failed']++;
         }
     }
 
-    private function expireShare(IShare $share, int $maxAgeDays, bool $dryRun, array &$stats): void {
-        $shareId = $share->getId();
-        $fileName = $this->resolveFileName($share);
-
-        $desc = sprintf(
-            'share id=%s type=%d file="%s" sharedBy=%s created=%s',
-            $shareId,
-            $share->getShareType(),
-            $fileName,
-            $share->getSharedBy(),
-            $share->getShareTime()->format(DateTime::ATOM)
-        );
-
-        if ($dryRun) {
-            $this->logger->warning(
-                'ShareCleanup [dry-run]: would end ' . $desc,
-                ['app' => 'sharecleanup']
-            );
-            $stats['ended']++;
-            return;
-        }
-
-        try {
-            $this->shareManager->deleteShare($share);
-
-            // Clean up the notification marker for the removed share.
-            $this->config->deleteAppValue(Application::APP_ID, self::PREFIX_NOTIFIED . $shareId);
-
-            $this->logger->warning('ShareCleanup: ended ' . $desc, ['app' => 'sharecleanup']);
-            $stats['ended']++;
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'ShareCleanup: failed to end ' . $desc . ': ' . $e->getMessage(),
-                ['app' => 'sharecleanup']
-            );
-            $stats['failed']++;
-        }
-    }
-
-    /**
-     * Resolves a human-readable name of the shared file/folder.
-     * Falls back to the node id if the node can no longer be resolved.
-     */
     private function resolveFileName(IShare $share): string {
         try {
             $node = $share->getNode();

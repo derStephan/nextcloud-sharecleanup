@@ -1,6 +1,7 @@
 # Share Cleanup
 
 [![Tests](https://github.com/derStephan/nextcloud-sharecleanup/actions/workflows/tests.yml/badge.svg)](https://github.com/derStephan/nextcloud-sharecleanup/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/derStephan/nextcloud-sharecleanup/branch/main/graph/badge.svg)](https://codecov.io/gh/derStephan/nextcloud-sharecleanup)
 
 A Nextcloud app that **automatically ends file shares** after a configurable period
 (default: **365 days**) — covering internal user/group shares as well as external
@@ -54,104 +55,50 @@ When a user shares a file or folder, Share Cleanup:
 
 ```bash
 # Extract into your Nextcloud apps directory
-tar -xzf sharecleanup-1.0.0.tar.gz -C /var/www/nextcloud/apps/
+tar -xzf sharecleanup-1.0.1.tar.gz -C /var/www/nextcloud/apps/
 
 # Set ownership (adjust user for your setup)
 chown -R www-data:www-data /var/www/nextcloud/apps/sharecleanup
 
 # Enable the app
-sudo -u www-data php occ app:enable sharecleanup
+sudo -u www-data php /var/www/nextcloud/occ app:enable sharecleanup
 ```
-
-The background job registers itself automatically — nothing else to configure.
 
 ## Configuration
 
-**Web:** Administration settings → **Sharing** → section *Share Cleanup*
-(requires the **full administrator** role — not subadmin)
+**Administration → Sharing → Share Cleanup**
 
 | Setting | Default | Description |
 |---|---|---|
-| Maximum share age (days) | **365** | Shares older than this are ended |
-| Dry-run mode | **on** | Only log, end nothing — disable when ready |
+| **Maximum share age (days)** | 365 | Shares older than this are ended automatically |
+| **Dry-run mode** | Enabled | Log only, change nothing — disable when ready |
 
-**OCC:**
+## Usage
 
-```bash
-occ config:app:set sharecleanup max_age_days --value=365
-occ config:app:set sharecleanup dry_run --value=no
-```
+### Automatic
 
-## Getting started safely
+The app runs **hourly** via a Nextcloud background job. No configuration needed.
 
-The app **starts in dry-run mode** — it ends nothing and notifies nobody until you say so.
+### Manual
 
 ```bash
-# 1. Dry run — see what would happen
-occ sharecleanup:run --dry-run
-# → Scanned: N | Skipped (own expiry): N | Notified: N | Shares ended: N | Tags removed: N | Failed: N
+# Dry run (default) — see what would happen
+sudo -u www-data php occ sharecleanup:run --dry-run
 
-# 2. Inspect the log
-grep ShareCleanup /var/www/nextcloud/data/nextcloud.log | jq .
+# Live run — actually end shares
+sudo -u www-data php occ sharecleanup:run --force
 
-# 3. When satisfied, go live
-occ config:app:set sharecleanup dry_run --value=no
+# Custom max age
+sudo -u www-data php occ sharecleanup:run --days=30 --force
 ```
 
-## Timeline (default: 365 days)
+## How it works
 
 ```
-Day 0    Share created → file tagged "Share ends on <date>"
-Day 328  90 % reached → one-time notification to the sharing user
-Day 365  Share is ended; tag removed once its date has passed
+Day 0        Share created → File tagged with "Share ends on YYYY-MM-DD"
+Day 328      90 % of lifetime → User notified (once per share)
+Day 365      100 % of lifetime → Share ended automatically
 ```
-
-## What is covered — and what is not
-
-**Covered (automatically, no per-app work needed):**
-All *file shares* stored in Nextcloud's central share table — user, group, link,
-email, federated, circle, **Talk room** and **Deck** shares. The app discovers the
-share types present in the database at every run, so **new share types introduced
-by future apps or Nextcloud versions are picked up automatically**.
-
-**Not covered (by design, technically impossible):**
-Shares that are *not file shares* and live outside the share system — e.g. **calendar
-shares**, **Polls** surveys or **Forms** links. These are app-internal objects with
-their own tables; time-limiting them would have to be implemented by those apps
-themselves. Incoming federated shares (mounted on this instance) are also unaffected.
-
-## Important notes
-
-- ⚠️ **Ended shares are irreversible.** The file stays, the share is gone.
-  Test with dry-run first.
-- ⚠️ **Retroactive effect:** the first live run notifies owners of all shares older
-  than 90 % of the period and ends all shares older than the period.
-- Tags are **not translated per user** (system tags are shared data, not UI text) —
-  therefore the tag name is fixed English: `Share ends on YYYY-MM-DD`.
-- All UI texts and notifications **are** translated per user (20 languages bundled).
-
-## Logging
-
-- Ended shares → **warning**
-- Notifications → **info**
-- Errors → **error**
-
-```bash
-grep ShareCleanup /var/www/nextcloud/data/nextcloud.log
-```
-
-## Uninstall
-
-```bash
-occ app:disable sharecleanup
-occ app:remove sharecleanup
-# Optionally remove configuration:
-occ config:app:delete sharecleanup max_age_days
-occ config:app:delete sharecleanup dry_run
-```
-
-Created system tags remain and can be removed under
-Administration → Workflow → System tags.
 
 ## Security
 

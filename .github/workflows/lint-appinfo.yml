@@ -1,4 +1,4 @@
-name: App info
+name: Lint appinfo
 
 on:
   push:
@@ -10,21 +10,22 @@ jobs:
   info-xml:
     name: Validate info.xml
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check info.xml is well-formed XML
+      - name: Validate XML
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq libxml2-utils > /dev/null
           xmllint --noout appinfo/info.xml
-          echo "info.xml is well-formed."
+          echo "info.xml is valid XML"
 
-      - name: Check required fields present
+      - name: Check required fields
         run: |
-          set -e
-          for field in id name version licence author namespace; do
-            grep -q "<$field>" appinfo/info.xml \
-              && echo "OK: <$field>" \
-              || { echo "MISSING: <$field>"; exit 1; }
+          for field in id name summary description version licence author namespace; do
+            if ! grep -q "<$field>" appinfo/info.xml; then
+              echo "::error::Missing required field: $field"
+              exit 1
+            fi
           done
+          echo "All required fields present"

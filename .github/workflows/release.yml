@@ -1,6 +1,7 @@
 name: Release
 
 on:
+  # Only trigger on pushes to main/master that change version
   push:
     branches: [main, master]
   # Also allow manual trigger
@@ -10,11 +11,19 @@ permissions:
   contents: write
 
 jobs:
+  # First: run tests to ensure everything is green
+  test:
+    name: Run tests
+    uses: ./.github/workflows/tests.yml
+    secrets: inherit
+
+  # Then: only release if tests passed
   release:
     name: Semantic release
     runs-on: ubuntu-latest
-    # Only run if there are new commits since last tag
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    needs: test
+    # Only run if tests succeeded
+    if: ${{ needs.test.result == 'success' }}
 
     steps:
       - name: Checkout
@@ -27,10 +36,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
-
-      - name: Install semantic-release
-        run: |
-          npm install -g semantic-release @semantic-release/git @semantic-release/changelog @semantic-release/exec
 
       - name: Get current version from info.xml
         id: current
