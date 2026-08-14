@@ -5,7 +5,7 @@
     <name>Share Cleanup</name>
     <summary>Automatically ends old shares</summary>
     <description><![CDATA[Automatically ends shares older than the configured number of days. Shared files are tagged with the end date of the share, and the sharing user is notified at 90 % of the lifetime. Shares with their own expiration date are never ended. The files themselves are never deleted.]]></description>
-    <version>1.5.0</version>
+    <version>1.5.1</version>
     <licence>mit</licence>
     <author>derStephan</author>
     <namespace>ShareCleanup</namespace>
