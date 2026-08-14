@@ -1,0 +1,21 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Build artifacts
+*.tar.gz
+*.zip
+node_modules/
+
+# Dependencies & test cache (composer.lock SHOULD be committed for reproducible builds)
+vendor/
+.phpunit.cache/
+.phpunit.result.cache
+coverage/

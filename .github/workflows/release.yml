@@ -1,0 +1,84 @@
+name: Release
+
+# Fires when a release is published — including releases created
+# entirely in the GitHub web UI (Releases → "Draft a new release").
+on:
+  release:
+    types: [published]
+  # Fallback: also fire when a tag is pushed from the command line.
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & publish tarball
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: |
+          # Works for both trigger types: release event or tag push
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Releasing version $VERSION (tag: $TAG)"
+
+      - name: Verify version matches info.xml
+        run: |
+          XML_VERSION=$(grep -oP '(?<=<version>)[^<]+' appinfo/info.xml | head -1)
+          if [ "$XML_VERSION" != "${{ steps.version.outputs.version }}" ]; then
+            echo "::error::Tag version (${{ steps.version.outputs.version }}) does not match info.xml version ($XML_VERSION)"
+            echo "::error::Bump the version in appinfo/info.xml first, then re-create the release."
+            exit 1
+          fi
+          echo "Version check passed: $XML_VERSION"
+
+      - name: Build tarball
+        run: |
+          APP_ID=$(grep -oP '(?<=<id>)[^<]+' appinfo/info.xml | head -1)
+          VERSION="${{ steps.version.outputs.version }}"
+          ARCHIVE="${APP_ID}-${VERSION}.tar.gz"
+
+          mkdir -p "/tmp/${APP_ID}"
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='tests' \
+            --exclude='composer.json' \
+            --exclude='composer.lock' \
+            --exclude='phpunit.xml' \
+            --exclude='.tx' \
+            ./ "/tmp/${APP_ID}/"
+
+          tar -czf "$ARCHIVE" -C /tmp "$APP_ID"
+          echo "archive=$ARCHIVE" >> "$GITHUB_ENV"
+          echo "Built $ARCHIVE"
+
+      - name: Attach tarball to release (web-UI releases)
+        if: ${{ github.event_name == 'release' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          files: ${{ env.archive }}
+
+      - name: Create release (tag-push releases)
+        if: ${{ github.event_name == 'push' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.archive }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false

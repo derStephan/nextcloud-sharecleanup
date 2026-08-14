@@ -1,0 +1,115 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+# Cancel superseded runs on the same branch/PR.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ------------------------------------------------------------------
+  # 1. PHP syntax lint across all supported PHP versions
+  # ------------------------------------------------------------------
+  lint:
+    name: PHP ${{ matrix.php }} lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.1', '8.2', '8.3', '8.4']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: Lint all PHP files
+        run: |
+          set -e
+          find lib templates appinfo tests -name '*.php' -print0 \
+            | xargs -0 -n1 php -l > /dev/null
+          echo "All PHP files passed syntax check."
+
+  # ------------------------------------------------------------------
+  # 2. PHPUnit unit tests (standalone, with OCP stubs)
+  # ------------------------------------------------------------------
+  phpunit:
+    name: PHPUnit PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.1', '8.2', '8.3', '8.4']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: Validate composer.json
+        run: composer validate --no-check-publish
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Run unit tests
+        run: vendor/bin/phpunit --colors=always
+
+  # ------------------------------------------------------------------
+  # 3. PHPUnit against real Nextcloud (integration)
+  #    Checks the app out into a real server tree so the test bootstrap
+  #    picks up the real OCP interfaces instead of the stubs.
+  # ------------------------------------------------------------------
+  integration:
+    name: NC ${{ matrix.nextcloud }} / PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        # Adjust these to the Nextcloud branches you want to verify against.
+        nextcloud: ['master']
+        php: ['8.2']
+
+    steps:
+      - name: Checkout Nextcloud server
+        uses: actions/checkout@v4
+        with:
+          repository: nextcloud/server
+          ref: ${{ matrix.nextcloud }}
+          path: nextcloud
+
+      - name: Checkout this app into apps/sharecleanup
+        uses: actions/checkout@v4
+        with:
+          path: nextcloud/apps/sharecleanup
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: Install app dependencies
+        working-directory: nextcloud/apps/sharecleanup
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Run unit tests against real OCP
+        working-directory: nextcloud/apps/sharecleanup
+        run: vendor/bin/phpunit --colors=always
