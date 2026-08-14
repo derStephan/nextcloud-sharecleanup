@@ -5,7 +5,7 @@
     <name>Share Cleanup</name>
     <summary>Automatically ends old shares</summary>
     <description><![CDATA[Automatically ends shares older than the configured number of days. Shared files are tagged with the end date of the share, and the sharing user is notified at 90 % of the lifetime. Shares with their own expiration date are never ended. The files themselves are never deleted.]]></description>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <licence>mit</licence>
     <author>derStephan</author>
     <namespace>ShareCleanup</namespace>
@@ -14,7 +14,7 @@
     <repository>https://github.com/derStephan/nextcloud-sharecleanup.git</repository>
     <category>files</category>
     <dependencies>
-        <nextcloud min-version="33" max-version="36"/>
+        <nextcloud min-version="33" max-version="34"/>
     </dependencies>
     <background-jobs>
         <job>OCA\ShareCleanup\BackgroundJob\CleanupJob</job>
