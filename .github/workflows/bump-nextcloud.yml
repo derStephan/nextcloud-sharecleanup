@@ -164,7 +164,69 @@ jobs:
           git config --local user.name "github-actions[bot]"
           
           git add appinfo/info.xml .github/workflows/tests.yml README.md
-          git commit -m "chore: bump NC max-version to $LATEST, PHP $PHP_RANGE, test matrix stable$PREVIOUS/stable$LATEST [skip ci]"
+          git commit -m "chore: bump NC max-version to $LATEST, PHP $PHP_RANGE, test matrix stable$PREVIOUS/stable$LATEST"
           git push origin HEAD:${{ github.ref_name }}
           
           echo "Successfully bumped to NC $LATEST with PHP $PHP_RANGE"
+
+  release:
+    name: Create release after bump
+    runs-on: ubuntu-latest
+    needs: bump
+    if: ${{ needs.bump.result == 'success' }}
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get current version
+        id: current
+        run: |
+          CURRENT=$(grep -oP '(?<=<version>)[^<]+' appinfo/info.xml | head -1)
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "Current version: $CURRENT"
+
+      - name: Build tarball
+        run: |
+          APP_ID=$(grep -oP '(?<=<id>)[^<]+' appinfo/info.xml | head -1)
+          VERSION="${{ steps.current.outputs.current }}"
+          ARCHIVE="${APP_ID}-${VERSION}.tar.gz"
+
+          mkdir -p "/tmp/${APP_ID}"
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='tests' \
+            --exclude='composer.json' \
+            --exclude='composer.lock' \
+            --exclude='phpunit.xml' \
+            --exclude='.tx' \
+            ./ "/tmp/${APP_ID}/"
+
+          tar -czf "$ARCHIVE" -C /tmp "$APP_ID"
+          echo "archive=$ARCHIVE" >> "$GITHUB_ENV"
+          echo "Built $ARCHIVE"
+
+      - name: Create Git tag
+        run: |
+          VERSION="${{ steps.current.outputs.current }}"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git tag -a "v${VERSION}" -m "Release v${VERSION}"
+          git push origin "v${VERSION}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v${{ steps.current.outputs.current }}
+          name: v${{ steps.current.outputs.current }}
+          body: |
+            Automatic release after Nextcloud version bump.
+            
+            See commit history for details.
+          files: ${{ env.archive }}
+          token: ${{ secrets.GITHUB_TOKEN }}

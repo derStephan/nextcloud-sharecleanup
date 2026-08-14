@@ -58,6 +58,10 @@ namespace OCP\DB {
 }
 
 namespace OCP\Files {
+    interface Node {
+        public function getId(): int;
+        public function getName(): string;
+    }
     interface IRootFolder {
         public function getById(int $id): array;
     }

@@ -76,8 +76,8 @@ jobs:
                 echo "Manual/forced release of current version: $NEXT"
               else
                 # Check if info.xml was modified in the last commit
-                INFO_CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -c "appinfo/info.xml" || echo "0")
-                if [ "$INFO_CHANGED" -gt 0 ]; then
+                # Use git diff --quiet for reliable exit code check
+                if git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -q "appinfo/info.xml"; then
                   NEXT="${{ steps.current.outputs.current }}"
                   echo "info.xml changed, releasing current version: $NEXT"
                 else
