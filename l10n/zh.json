@@ -1,0 +1,18 @@
+{
+    "translations": {
+        "Share Cleanup": "共享清理",
+        "Automatically ends shares older than the configured number of days. Shared files are tagged with the end date of the share, and the sharing user is notified at 90 % of the lifetime. Shares with their own expiration date are never ended. The files themselves are never deleted.": "自动结束超过配置天数的共享。共享文件会被标记结束日期，并在生命周期达到 90% 时通知共享用户。具有自有过期日期的共享永不结束。文件本身不会被删除。",
+        "Maximum share age (days)": "最大共享期限（天）",
+        "Users are notified after {notify} days (90 %), the share ends after {total} days. Shares with their own expiration date are never ended.": "将在 {notify} 天（90%）后通知用户，共享将在 {total} 天后结束。带有自有过期日期的共享永不结束。",
+        "Dry-run mode (only log, end nothing)": "模拟运行模式（仅记录日志，不结束任何内容）",
+        "Enabled by default. Test with \"occ sharecleanup:run --dry-run\" and check the log, then disable.": "默认启用。请先用 \"occ sharecleanup:run --dry-run\" 测试并检查日志，然后禁用。",
+        "Save": "保存",
+        "Settings saved.": "设置已保存。",
+        "Error saving settings: ": "保存设置时出错：",
+        "Please enter a number of days (minimum 1).": "请输入天数（最少 1 天）。",
+        "Manual run: occ sharecleanup:run [--days=N] [--dry-run] [--force]": "手动运行：occ sharecleanup:run [--days=N] [--dry-run] [--force]",
+        "Share of \"%s\" ends soon": "\"%s\" 的共享即将结束",
+        "Your share of \"%1$s\" ends automatically on %2$s. The file itself is not deleted. If the share is still needed, share the file again afterwards.": "您对 \"%1$s\" 的共享将于 %2$s 自动结束。文件本身不会被删除。如果仍需共享，请在此之后重新共享。"
+    },
+    "pluralForm": "nplurals=2; plural=(n != 1);"
+}

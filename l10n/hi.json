@@ -1,0 +1,18 @@
+{
+    "translations": {
+        "Share Cleanup": "शेयर क्लीनअप",
+        "Automatically ends shares older than the configured number of days. Shared files are tagged with the end date of the share, and the sharing user is notified at 90 % of the lifetime. Shares with their own expiration date are never ended. The files themselves are never deleted.": "कॉन्फ़िगर किए गए दिनों से पुराने शेयर स्वचालित रूप से समाप्त कर दिए जाते हैं। साझा की गई फ़ाइलों पर समाप्ति तिथि का टैग लगाया जाता है, और जीवनकाल के 90% पूरे होने पर शेयर करने वाले उपयोगकर्ता को सूचित किया जाता है। अपनी समाप्ति तिथि वाले शेयर कभी समाप्त नहीं किए जाते। फ़ाइलें स्वयं हटाई नहीं जातीं।",
+        "Maximum share age (days)": "अधिकतम शेयर आयु (दिन)",
+        "Users are notified after {notify} days (90 %), the share ends after {total} days. Shares with their own expiration date are never ended.": "उपयोगकर्ताओं को {notify} दिनों (90%) के बाद सूचित किया जाता है, शेयर {total} दिनों के बाद समाप्त हो जाता है। अपनी समाप्ति तिथि वाले शेयर कभी समाप्त नहीं होते।",
+        "Dry-run mode (only log, end nothing)": "ड्राई-रन मोड (केवल लॉग करें, कुछ समाप्त न करें)",
+        "Enabled by default. Test with \"occ sharecleanup:run --dry-run\" and check the log, then disable.": "डिफ़ॉल्ट रूप से सक्षम। \"occ sharecleanup:run --dry-run\" से परीक्षण करें और लॉग जाँचें, फिर अक्षम करें।",
+        "Save": "सहेजें",
+        "Settings saved.": "सेटिंग्स सहेजी गईं।",
+        "Error saving settings: ": "सेटिंग्स सहेजने में त्रुटि: ",
+        "Please enter a number of days (minimum 1).": "कृपया दिनों की संख्या दर्ज करें (न्यूनतम 1)।",
+        "Manual run: occ sharecleanup:run [--days=N] [--dry-run] [--force]": "मैनुअल रन: occ sharecleanup:run [--days=N] [--dry-run] [--force]",
+        "Share of \"%s\" ends soon": "\"%s\" का शेयर जल्द समाप्त हो रहा है",
+        "Your share of \"%1$s\" ends automatically on %2$s. The file itself is not deleted. If the share is still needed, share the file again afterwards.": "\"%1$s\" का आपका शेयर %2$s को स्वचालित रूप से समाप्त हो जाएगा। फ़ाइल स्वयं हटाई नहीं जाती है। यदि शेयर अभी भी आवश्यक है, तो बाद में फ़ाइल को फिर से साझा करें।"
+    },
+    "pluralForm": "nplurals=2; plural=(n != 1);"
+}

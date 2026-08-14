@@ -1,0 +1,18 @@
+{
+    "translations": {
+        "Share Cleanup": "Paylaşım Temizliği",
+        "Automatically ends shares older than the configured number of days. Shared files are tagged with the end date of the share, and the sharing user is notified at 90 % of the lifetime. Shares with their own expiration date are never ended. The files themselves are never deleted.": "Yapılandırılan gün sayısından eski paylaşımları otomatik olarak sonlandırır. Paylaşılan dosyalar bitiş tarihiyle etiketlenir ve paylaşım yapan kullanıcıya ömrün %90'ında bildirim gönderilir. Kendi son kullanma tarihi olan paylaşımlar asla sonlandırılmaz. Dosyaların kendisi silinmez.",
+        "Maximum share age (days)": "Maksimum paylaşım yaşı (gün)",
+        "Users are notified after {notify} days (90 %), the share ends after {total} days. Shares with their own expiration date are never ended.": "Kullanıcılara {notify} gün (%90) sonra bildirilir, paylaşım {total} gün sonra sona erer. Kendi son kullanma tarihi olan paylaşımlar sonlandırılmaz.",
+        "Dry-run mode (only log, end nothing)": "Simülasyon modu (yalnızca kaydet, hiçbir şeyi sonlandırma)",
+        "Enabled by default. Test with \"occ sharecleanup:run --dry-run\" and check the log, then disable.": "Varsayılan olarak etkindir. \"occ sharecleanup:run --dry-run\" ile test edin ve günlükleri kontrol edin, ardından devre dışı bırakın.",
+        "Save": "Kaydet",
+        "Settings saved.": "Ayarlar kaydedildi.",
+        "Error saving settings: ": "Ayarlar kaydedilirken hata oluştu: ",
+        "Please enter a number of days (minimum 1).": "Lütfen gün sayısı girin (en az 1).",
+        "Manual run: occ sharecleanup:run [--days=N] [--dry-run] [--force]": "Manuel çalıştırma: occ sharecleanup:run [--days=N] [--dry-run] [--force]",
+        "Share of \"%s\" ends soon": "\"%s\" paylaşımı yakında sona eriyor",
+        "Your share of \"%1$s\" ends automatically on %2$s. The file itself is not deleted. If the share is still needed, share the file again afterwards.": "\"%1$s\" paylaşımınız %2$s tarihinde otomatik olarak sona eriyor. Dosyanın kendisi silinmez. Paylaşım hala gerekliyse, dosyayı daha sonra tekrar paylaşın."
+    },
+    "pluralForm": "nplurals=2; plural=(n != 1);"
+}

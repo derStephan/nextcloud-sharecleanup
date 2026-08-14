@@ -1,0 +1,19 @@
+OC.L10N.register(
+    "sharecleanup",
+    {
+    "Share Cleanup": "Limpeza de compartilhamentos",
+    "Automatically ends shares older than the configured number of days. Shared files are tagged with the end date of the share, and the sharing user is notified at 90 % of the lifetime. Shares with their own expiration date are never ended. The files themselves are never deleted.": "Encerra automaticamente compartilhamentos mais antigos que o número de dias configurado. Os arquivos compartilhados são etiquetados com a data de término e o usuário compartilhador é notificado aos 90% do tempo de vida. Compartilhamentos com data de expiração própria nunca são encerrados. Os arquivos em si não são excluídos.",
+    "Maximum share age (days)": "Idade máxima do compartilhamento (dias)",
+    "Users are notified after {notify} days (90 %), the share ends after {total} days. Shares with their own expiration date are never ended.": "Os usuários são notificados após {notify} dias (90%), o compartilhamento termina após {total} dias. Compartilhamentos com data de expiração própria nunca são encerrados.",
+    "Dry-run mode (only log, end nothing)": "Modo de simulação (apenas registrar, não encerrar nada)",
+    "Enabled by default. Test with \"occ sharecleanup:run --dry-run\" and check the log, then disable.": "Ativado por padrão. Teste com \"occ sharecleanup:run --dry-run\" e verifique o log, depois desative.",
+    "Save": "Salvar",
+    "Settings saved.": "Configurações salvas.",
+    "Error saving settings: ": "Erro ao salvar as configurações: ",
+    "Please enter a number of days (minimum 1).": "Por favor, insira um número de dias (mínimo 1).",
+    "Manual run: occ sharecleanup:run [--days=N] [--dry-run] [--force]": "Execução manual: occ sharecleanup:run [--days=N] [--dry-run] [--force]",
+    "Share of \"%s\" ends soon": "O compartilhamento de \"%s\" termina em breve",
+    "Your share of \"%1$s\" ends automatically on %2$s. The file itself is not deleted. If the share is still needed, share the file again afterwards.": "Seu compartilhamento de \"%1$s\" termina automaticamente em %2$s. O arquivo em si não é excluído. Se o compartilhamento ainda for necessário, compartilhe o arquivo novamente depois."
+},
+    "nplurals=2; plural=(n != 1);"
+);

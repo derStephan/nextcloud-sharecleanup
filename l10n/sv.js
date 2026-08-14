@@ -1,0 +1,19 @@
+OC.L10N.register(
+    "sharecleanup",
+    {
+    "Share Cleanup": "Rensa delningar",
+    "Automatically ends shares older than the configured number of days. Shared files are tagged with the end date of the share, and the sharing user is notified at 90 % of the lifetime. Shares with their own expiration date are never ended. The files themselves are never deleted.": "Avslutar automatiskt delningar som är äldre än det konfigurerade antalet dagar. Delade filer taggas med slutdatumet för delningen och användaren meddelas vid 90 % av livslängden. Delningar med ett eget utgångsdatum avslutas aldrig. Själva filerna raderas inte.",
+    "Maximum share age (days)": "Maximal ålder för delning (dagar)",
+    "Users are notified after {notify} days (90 %), the share ends after {total} days. Shares with their own expiration date are never ended.": "Användare meddelas efter {notify} dagar (90 %), delningen avslutas efter {total} dagar. Delningar med eget utgångsdatum avslutas aldrig.",
+    "Dry-run mode (only log, end nothing)": "Testläge (endast logga, avsluta inget)",
+    "Enabled by default. Test with \"occ sharecleanup:run --dry-run\" and check the log, then disable.": "Aktiverat som standard. Testa med \"occ sharecleanup:run --dry-run\" och kontrollera loggen, avaktivera sedan.",
+    "Save": "Spara",
+    "Settings saved.": "Inställningar sparade.",
+    "Error saving settings: ": "Fel vid sparning av inställningar: ",
+    "Please enter a number of days (minimum 1).": "Ange ett antal dagar (minst 1).",
+    "Manual run: occ sharecleanup:run [--days=N] [--dry-run] [--force]": "Manuell körning: occ sharecleanup:run [--days=N] [--dry-run] [--force]",
+    "Share of \"%s\" ends soon": "Delningen av \"%s\" avslutas snart",
+    "Your share of \"%1$s\" ends automatically on %2$s. The file itself is not deleted. If the share is still needed, share the file again afterwards.": "Din delning av \"%1$s\" avslutas automatiskt den %2$s. Själva filen raderas inte. Om delningen fortfarande behövs, dela filen igen efteråt."
+},
+    "nplurals=2; plural=(n != 1);"
+);

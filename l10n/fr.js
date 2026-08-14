@@ -1,0 +1,19 @@
+OC.L10N.register(
+    "sharecleanup",
+    {
+    "Share Cleanup": "Nettoyage des partages",
+    "Automatically ends shares older than the configured number of days. Shared files are tagged with the end date of the share, and the sharing user is notified at 90 % of the lifetime. Shares with their own expiration date are never ended. The files themselves are never deleted.": "Met fin automatiquement aux partages plus anciens que le nombre de jours configuré. Les fichiers partagés sont étiquetés avec la date de fin et l'utilisateur partageant est prévenu à 90 % de la durée de vie. Les partages ayant leur propre date d'expiration ne sont jamais arrêtés. Les fichiers eux-mêmes ne sont pas supprimés.",
+    "Maximum share age (days)": "Âge maximal du partage (jours)",
+    "Users are notified after {notify} days (90 %), the share ends after {total} days. Shares with their own expiration date are never ended.": "Les utilisateurs sont prévenus après {notify} jours (90 %), le partage prend fin après {total} jours. Les partages avec une date d'expiration propre ne sont jamais arrêtés.",
+    "Dry-run mode (only log, end nothing)": "Mode simulation (journaliser uniquement, rien arrêter)",
+    "Enabled by default. Test with \"occ sharecleanup:run --dry-run\" and check the log, then disable.": "Activé par défaut. Testez avec \"occ sharecleanup:run --dry-run\" et vérifiez le journal, puis désactivez.",
+    "Save": "Enregistrer",
+    "Settings saved.": "Paramètres enregistrés.",
+    "Error saving settings: ": "Erreur lors de l'enregistrement des paramètres : ",
+    "Please enter a number of days (minimum 1).": "Veuillez entrer un nombre de jours (minimum 1).",
+    "Manual run: occ sharecleanup:run [--days=N] [--dry-run] [--force]": "Exécution manuelle : occ sharecleanup:run [--days=N] [--dry-run] [--force]",
+    "Share of \"%s\" ends soon": "Le partage de \"%s\" se termine bientôt",
+    "Your share of \"%1$s\" ends automatically on %2$s. The file itself is not deleted. If the share is still needed, share the file again afterwards.": "Votre partage de \"%1$s\" se termine automatiquement le %2$s. Le fichier lui-même n'est pas supprimé. Si le partage est toujours nécessaire, partagez à nouveau le fichier par la suite."
+},
+    "nplurals=2; plural=(n != 1);"
+);

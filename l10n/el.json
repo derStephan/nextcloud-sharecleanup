@@ -1,0 +1,18 @@
+{
+    "translations": {
+        "Share Cleanup": "Καθαρισμός κοινόχρηστων",
+        "Automatically ends shares older than the configured number of days. Shared files are tagged with the end date of the share, and the sharing user is notified at 90 % of the lifetime. Shares with their own expiration date are never ended. The files themselves are never deleted.": "Τερματίζει αυτόματα κοινοποιήσεις παλαιότερες από τις ρυθμισμένες ημέρες. Τα κοινόχρηστα αρχεία φέρουν ετικέτα με την ημερομηνία λήξης και ο χρήστης ειδοποιείται στο 90% της διάρκειας ζωής. Οι κοινοποιήσεις με δική τους ημερομηνία λήξης δεν τερματίζονται ποτέ. Τα ίδια τα αρχεία δεν διαγράφονται.",
+        "Maximum share age (days)": "Μέγιστη ηλικία κοινοποίησης (ημέρες)",
+        "Users are notified after {notify} days (90 %), the share ends after {total} days. Shares with their own expiration date are never ended.": "Οι χρήστες ειδοποιούνται μετά από {notify} ημέρες (90%), η κοινοποίηση λήγει μετά από {total} ημέρες. Οι κοινοποιήσεις με δική τους ημερομηνία λήξης δεν τερματίζονται ποτέ.",
+        "Dry-run mode (only log, end nothing)": "Λειτουργία δοκιμής (μόνο καταγραφή, καμία ενέργεια)",
+        "Enabled by default. Test with \"occ sharecleanup:run --dry-run\" and check the log, then disable.": "Ενεργό από προεπιλογή. Δοκιμάστε με \"occ sharecleanup:run --dry-run\" και ελέγξτε το αρχείο καταγραφής, έπειτα απενεργοποιήστε.",
+        "Save": "Αποθήκευση",
+        "Settings saved.": "Οι ρυθμίσεις αποθηκεύτηκαν.",
+        "Error saving settings: ": "Σφάλμα αποθήκευσης ρυθμίσεων: ",
+        "Please enter a number of days (minimum 1).": "Εισαγάγετε αριθμό ημερών (τουλάχιστον 1).",
+        "Manual run: occ sharecleanup:run [--days=N] [--dry-run] [--force]": "Χειροκίνητη εκτέλεση: occ sharecleanup:run [--days=N] [--dry-run] [--force]",
+        "Share of \"%s\" ends soon": "Η κοινοποίηση του \"%s\" λήγει σύντομα",
+        "Your share of \"%1$s\" ends automatically on %2$s. The file itself is not deleted. If the share is still needed, share the file again afterwards.": "Η κοινοποίηση του \"%1$s\" λήγει αυτόματα στις %2$s. Το ίδιο το αρχείο δεν διαγράφεται. Αν η κοινοποίηση εξακολουθεί να χρειάζεται, μοιραστείτε ξανά το αρχείο στη συνέχεια."
+    },
+    "pluralForm": "nplurals=2; plural=(n != 1);"
+}
