@@ -1,55 +1,94 @@
 name: Release
 
-# Fires when a release is published — including releases created
-# entirely in the GitHub web UI (Releases → "Draft a new release").
 on:
-  release:
-    types: [published]
-  # Fallback: also fire when a tag is pushed from the command line.
   push:
-    tags:
-      - 'v*.*.*'
+    branches: [main, master]
+  # Also allow manual trigger
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   release:
-    name: Build & publish tarball
+    name: Semantic release
     runs-on: ubuntu-latest
+    # Only run if there are new commits since last tag
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for version calculation
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract version
-        id: version
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install semantic-release
         run: |
-          # Works for both trigger types: release event or tag push
-          if [ "${{ github.event_name }}" = "release" ]; then
-            TAG="${{ github.event.release.tag_name }}"
+          npm install -g semantic-release @semantic-release/git @semantic-release/changelog @semantic-release/exec
+
+      - name: Get current version from info.xml
+        id: current
+        run: |
+          CURRENT=$(grep -oP '(?<=<version>)[^<]+' appinfo/info.xml | head -1)
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "Current version: $CURRENT"
+
+      - name: Determine next version
+        id: next
+        run: |
+          # Analyze commits since last tag to determine bump type
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          
+          if [ -z "$LAST_TAG" ]; then
+            # No tags yet, start with current version
+            NEXT="${{ steps.current.outputs.current }}"
           else
-            TAG="${GITHUB_REF#refs/tags/}"
+            # Check for breaking changes, features, or fixes
+            BREAKING=$(git log ${LAST_TAG}..HEAD --grep="BREAKING CHANGE" --grep="!:" --oneline | wc -l)
+            FEATURES=$(git log ${LAST_TAG}..HEAD --grep="^feat" --oneline | wc -l)
+            FIXES=$(git log ${LAST_TAG}..HEAD --grep="^fix" --oneline | wc -l)
+            
+            IFS='.' read -r MAJOR MINOR PATCH <<< "${{ steps.current.outputs.current }}"
+            
+            if [ "$BREAKING" -gt 0 ]; then
+              NEXT="$((MAJOR + 1)).0.0"
+            elif [ "$FEATURES" -gt 0 ]; then
+              NEXT="${MAJOR}.$((MINOR + 1)).0"
+            elif [ "$FIXES" -gt 0 ]; then
+              NEXT="${MAJOR}.${MINOR}.$((PATCH + 1))"
+            else
+              # No relevant commits, skip release
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              echo "No release-worthy commits found"
+              exit 0
+            fi
           fi
-          VERSION="${TAG#v}"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "Releasing version $VERSION (tag: $TAG)"
+          
+          echo "next=$NEXT" >> "$GITHUB_OUTPUT"
+          echo "Next version: $NEXT"
 
-      - name: Verify version matches info.xml
+      - name: Skip if no release needed
+        if: ${{ steps.next.outputs.skip == 'true' }}
+        run: echo "No release needed — exiting"
+
+      - name: Update version in info.xml
+        if: ${{ steps.next.outputs.skip != 'true' }}
         run: |
-          XML_VERSION=$(grep -oP '(?<=<version>)[^<]+' appinfo/info.xml | head -1)
-          if [ "$XML_VERSION" != "${{ steps.version.outputs.version }}" ]; then
-            echo "::error::Tag version (${{ steps.version.outputs.version }}) does not match info.xml version ($XML_VERSION)"
-            echo "::error::Bump the version in appinfo/info.xml first, then re-create the release."
-            exit 1
-          fi
-          echo "Version check passed: $XML_VERSION"
+          NEXT="${{ steps.next.outputs.next }}"
+          sed -i "s/<version>.*<\/version>/<version>$NEXT<\/version>/" appinfo/info.xml
+          grep '<version>' appinfo/info.xml
 
       - name: Build tarball
+        if: ${{ steps.next.outputs.skip != 'true' }}
         run: |
           APP_ID=$(grep -oP '(?<=<id>)[^<]+' appinfo/info.xml | head -1)
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${{ steps.next.outputs.next }}"
           ARCHIVE="${APP_ID}-${VERSION}.tar.gz"
 
           mkdir -p "/tmp/${APP_ID}"
@@ -67,17 +106,28 @@ jobs:
           echo "archive=$ARCHIVE" >> "$GITHUB_ENV"
           echo "Built $ARCHIVE"
 
-      - name: Attach tarball to release (web-UI releases)
-        if: ${{ github.event_name == 'release' }}
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          files: ${{ env.archive }}
+      - name: Commit version bump
+        if: ${{ steps.next.outputs.skip != 'true' }}
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add appinfo/info.xml
+          git commit -m "chore(release): ${{ steps.next.outputs.next }} [skip ci]" || echo "No changes to commit"
+          git push
 
-      - name: Create release (tag-push releases)
-        if: ${{ github.event_name == 'push' }}
+      - name: Create tag
+        if: ${{ steps.next.outputs.skip != 'true' }}
+        run: |
+          NEXT="${{ steps.next.outputs.next }}"
+          git tag -a "v$NEXT" -m "Release v$NEXT"
+          git push origin "v$NEXT"
+
+      - name: Create GitHub Release
+        if: ${{ steps.next.outputs.skip != 'true' }}
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.next.outputs.next }}
+          name: v${{ steps.next.outputs.next }}
           files: ${{ env.archive }}
           generate_release_notes: true
           draft: false
