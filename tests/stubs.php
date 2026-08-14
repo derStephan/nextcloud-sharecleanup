@@ -151,6 +151,96 @@ namespace OCP\Notification {
     }
 }
 
+
+
+namespace OCP\AppFramework\Utility {
+    interface ITimeFactory {
+        public function getTime(): int;
+    }
+}
+
+namespace OCP\BackgroundJob {
+    abstract class TimedJob {
+        protected int $interval = 0;
+        public function __construct(ITimeFactory $time) {}
+        protected function setInterval(int $seconds): void {
+            $this->interval = $seconds;
+        }
+        abstract protected function run($argument): void;
+    }
+}
+
+namespace OCP\L10N {
+    interface IFactory {
+        public function get(string $app, string $lang = null): IL10N;
+    }
+    interface IL10N {
+        public function t(string $text, array $parameters = []): string;
+    }
+}
+
+namespace OCP {
+    interface IURLGenerator {
+        public function imagePath(string $app, string $file): string;
+        public function linkToRouteAbsolute(string $route): string;
+    }
+    interface IRequest {
+        public function getParam(string $key, $default = null);
+    }
+}
+
+namespace OCP\AppFramework\Http {
+    class JSONResponse {
+        public function __construct(private array $data = []) {}
+        public function getData(): array {
+            return $this->data;
+        }
+    }
+}
+
+namespace Symfony\Component\Console\Command {
+    abstract class Command {
+        protected ?string $name = null;
+        public function __construct() {}
+        public function setName(string $name): static {
+            $this->name = $name;
+            return $this;
+        }
+        public function getName(): ?string {
+            return $this->name;
+        }
+        public function setDescription(string $description): static {
+            return $this;
+        }
+        public function addOption(string $name, $shortcut = null, int $mode = 0, string $description = '', $default = null): static {
+            return $this;
+        }
+        public function getDefinition(): array {
+            return ['days' => true, 'dry-run' => true, 'force' => true];
+        }
+        abstract protected function configure(): void;
+        abstract protected function execute(InputInterface $input, OutputInterface $output): int;
+    }
+}
+
+namespace Symfony\Component\Console\Input {
+    interface InputInterface {
+        public function getOption(string $name);
+    }
+    class InputOption {
+        public const VALUE_NONE = 1;
+        public const VALUE_REQUIRED = 2;
+        public const VALUE_OPTIONAL = 4;
+        public const VALUE_IS_ARRAY = 8;
+    }
+}
+
+namespace Symfony\Component\Console\Output {
+    interface OutputInterface {
+        public function writeln($messages, int $options = 0): void;
+    }
+}
+
 namespace Psr\Log {
     if (!interface_exists(LoggerInterface::class)) {
         interface LoggerInterface {

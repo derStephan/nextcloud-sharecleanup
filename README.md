@@ -124,8 +124,8 @@ checkout (using the real OCP interfaces). See `tests/README.md` for details.
 GitHub Actions run the checks automatically on every push and pull request
 (see `.github/workflows/`):
 
-* **Lint** — PHP syntax check across PHP 8.1–8.4
-* **PHPUnit** — unit tests with OCP stubs, across PHP 8.1–8.4
+* **Lint** — PHP syntax check across PHP 8.2–8.5
+* **PHPUnit** — unit tests with OCP stubs, across PHP 8.2–8.5
 * **Integration** — unit tests against a real Nextcloud server checkout
   (currently `stable33` and `stable34`)
 * **App info** — validates `appinfo/info.xml`

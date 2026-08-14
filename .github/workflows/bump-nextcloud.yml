@@ -66,35 +66,105 @@ jobs:
             echo "No major jump (diff: $DIFF)"
           fi
 
-      - name: Bump max-version and test matrix, then commit
+      - name: Fetch supported PHP versions from Nextcloud docs
+        id: php
+        run: |
+          python3 -c "
+          import re, urllib.request, sys
+          
+          latest = '${{ steps.nc.outputs.latest }}'
+          url = 'https://raw.githubusercontent.com/nextcloud/server/wiki/Releases-and-PHP-versions.md'
+          
+          try:
+              with urllib.request.urlopen(url, timeout=30) as r:
+                  content = r.read().decode('utf-8')
+              
+              # Find row for the NC version: | 34 | 8.2, 8.3, 8.4, 8.5 |
+              pattern = r'\|\s*' + re.escape(latest) + r'\s*\|\s*([0-9.,\s]+)'
+              match = re.search(pattern, content)
+              
+              if match:
+                  versions = [v.strip() for v in match.group(1).split(',')]
+                  versions = sorted(set(versions), key=lambda v: [int(x) for x in v.split('.')])
+                  php_versions = ','.join(versions)
+                  yaml_array = ', '.join(f"'{v}'" for v in versions)
+                  print(f'php_versions={php_versions}')
+                  print(f'yaml_array={yaml_array}')
+              else:
+                  raise ValueError(f'No PHP versions found for NC {latest}')
+                  
+          except Exception as e:
+              print(f'::warning::Could not fetch PHP versions: {e}', file=sys.stderr)
+              # Fallback: read from current tests.yml
+              with open('.github/workflows/tests.yml') as f:
+                  content = f.read()
+              match = re.search(r"php: \[\K[^]]+", content)
+              if match:
+                  fallback = match.group(0)
+                  print(f'php_versions={fallback.replace("'", "").replace(" ", "")}')
+                  print(f'yaml_array={fallback}')
+              else:
+                  print('php_versions=8.2,8.3,8.4,8.5')
+                  print('yaml_array=\'8.2\', \'8.3\', \'8.4\', \'8.5\'')
+          " >> "$GITHUB_OUTPUT"
+          
+          cat "$GITHUB_OUTPUT"
+
+      - name: Bump max-version, test matrix, PHP versions, then commit
         if: ${{ steps.jump.outputs.is_major_jump == 'true' }}
         run: |
           LATEST="${{ steps.nc.outputs.latest }}"
           PREVIOUS=$((LATEST - 1))
+          PHP_YAML="${{ steps.php.outputs.yaml_array }}"
+          PHP_READABLE="${{ steps.php.outputs.php_versions }}"
           
           # 1) Update info.xml max-version
           sed -i "s/max-version=\"*\"/max-version=\"$LATEST\"/" appinfo/info.xml
           echo "=== info.xml ==="
           grep 'max-version' appinfo/info.xml
           
-          # 2) Update tests.yml integration matrix:
-          #    keep only the previous and the new stable version
-          OLD_MATRIX=$(grep -oP "nextcloud: \[\K[^]]+" .github/workflows/tests.yml)
-          echo "Current matrix: $OLD_MATRIX"
-          
-          # Build new matrix with previous + latest
+          # 2) Update tests.yml:
+          #    a) Integration matrix: previous + latest NC version
           NEW_MATRIX="'stable$PREVIOUS', 'stable$LATEST'"
           sed -i "s/nextcloud: \[[^]]*\]/nextcloud: [$NEW_MATRIX]/" .github/workflows/tests.yml
           
-          echo "=== tests.yml matrix ==="
-          grep "nextcloud:" .github/workflows/tests.yml
+          #    b) PHP matrices: use versions supported by the new NC version
+          sed -i "s/php: \[[^]]*\]/php: [$PHP_YAML]/g" .github/workflows/tests.yml
           
-          # 3) Commit and push
+          echo "=== tests.yml updated ==="
+          grep -n "nextcloud:\|php: \[" .github/workflows/tests.yml
+          
+          # 3) Update README.md with current versions
+          APP_VERSION=$(grep -oP '(?<=<version>)[^<]+' appinfo/info.xml | head -1)
+          NC_MIN=$(grep -oP '(?<=min-version=")[^"]+' appinfo/info.xml)
+          NC_MATRIX=$(grep -oP "nextcloud: \[\K[^]]+" .github/workflows/tests.yml)
+          
+          # Convert PHP versions to readable range (e.g., 8.2–8.5)
+          PHP_FIRST=$(echo "$PHP_READABLE" | cut -d',' -f1)
+          PHP_LAST=$(echo "$PHP_READABLE" | tr ',' '\n' | tail -1)
+          PHP_RANGE="$PHP_FIRST–$PHP_LAST"
+          
+          # Update install command version
+          sed -i "s/sharecleanup-[0-9]*\.[0-9]*\.[0-9]*\.tar\.gz/sharecleanup-$APP_VERSION.tar.gz/" README.md
+          
+          # Update requirements line
+          sed -i "s/Nextcloud [0-9]* or higher/Nextcloud $NC_MIN or higher/" README.md
+          
+          # Update PHP versions in CI section
+          sed -i "s/PHP [0-9]*\.[0-9]*–[0-9]*\.[0-9]*/PHP $PHP_RANGE/" README.md
+          
+          # Update NC stable versions in CI section
+          sed -i "s/(currently \`stable[0-9]*\` and \`stable[0-9]*\`)/(currently $NC_MATRIX)/" README.md
+          
+          echo "=== README updated ==="
+          grep -n "sharecleanup-.*tar.gz\|Nextcloud.*or higher\|PHP.*–\|currently.*stable" README.md
+          
+          # 4) Commit and push
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           
-          git add appinfo/info.xml .github/workflows/tests.yml
-          git commit -m "chore: bump Nextcloud max-version to $LATEST and update test matrix to stable$PREVIOUS/stable$LATEST [skip ci]"
+          git add appinfo/info.xml .github/workflows/tests.yml README.md
+          git commit -m "chore: bump NC max-version to $LATEST, PHP $PHP_RANGE, test matrix stable$PREVIOUS/stable$LATEST [skip ci]"
           git push origin HEAD:${{ github.ref_name }}
           
-          echo "Successfully bumped max-version to $LATEST and updated test matrix to stable$PREVIOUS/stable$LATEST"
+          echo "Successfully bumped to NC $LATEST with PHP $PHP_RANGE"
