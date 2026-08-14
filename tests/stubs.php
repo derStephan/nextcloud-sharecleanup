@@ -153,12 +153,6 @@ namespace OCP\Notification {
 
 
 
-namespace OCP\AppFramework\Utility {
-    interface ITimeFactory {
-        public function getTime(): int;
-    }
-}
-
 namespace OCP\BackgroundJob {
     abstract class TimedJob {
         protected int $interval = 0;
