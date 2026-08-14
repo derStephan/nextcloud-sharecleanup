@@ -42,6 +42,11 @@ class CleanupServiceTest extends TestCase {
         $this->userManager = $this->createMock(IUserManager::class);
         $this->rootFolder = $this->createMock(IRootFolder::class);
         $this->tagService = $this->createMock(TagService::class);
+        // The service reads max age via TagService, not via IConfig.
+        // Stub a sane default so tests are deterministic; individual
+        // tests can override by re-stubbing if needed.
+        $this->tagService->method('getMaxAgeDays')->willReturn(365);
+        $this->tagService->method('cleanupPastTags')->willReturn(0);
         $this->logger = $this->createMock(LoggerInterface::class);
         $this->db = $this->createMock(IDBConnection::class);
 
