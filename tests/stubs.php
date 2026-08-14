@@ -190,6 +190,15 @@ namespace OCP {
     }
 }
 
+namespace OCP\AppFramework {
+    abstract class Controller {
+        public function __construct(
+            protected string $appName,
+            protected \OCP\IRequest $request,
+        ) {}
+    }
+}
+
 namespace OCP\AppFramework\Http {
     class JSONResponse {
         public function __construct(private array $data = []) {}

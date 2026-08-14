@@ -103,6 +103,10 @@ class NotifierTest extends TestCase {
         $l10n = $this->createMock(IL10N::class);
         $l10n->method('t')
             ->willReturnCallback(function ($text, $params = []) {
+                // Handle both %s and %1$s style placeholders
+                if (empty($params)) {
+                    return $text;
+                }
                 return vsprintf($text, $params);
             });
 
@@ -115,8 +119,19 @@ class NotifierTest extends TestCase {
         $notification->method('getSubjectParameters')->willReturn([]);
 
         $notification->expects($this->once())
+            ->method('setIcon')
+            ->willReturnSelf();
+
+        $notification->expects($this->once())
+            ->method('setLink')
+            ->willReturnSelf();
+
+        $notification->expects($this->once())
             ->method('setParsedSubject')
-            ->with('Share of "" ends soon')
+            ->willReturnSelf();
+
+        $notification->expects($this->once())
+            ->method('setParsedMessage')
             ->willReturnSelf();
 
         $result = $this->notifier->prepare($notification, 'en');
