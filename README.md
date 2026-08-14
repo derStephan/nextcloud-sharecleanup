@@ -55,7 +55,7 @@ When a user shares a file or folder, Share Cleanup:
 
 ```bash
 # Extract into your Nextcloud apps directory
-tar -xzf sharecleanup-1.4.0.tar.gz -C /var/www/nextcloud/apps/
+tar -xzf sharecleanup-1.5.1.tar.gz -C /var/www/nextcloud/apps/
 
 # Set ownership (adjust user for your setup)
 chown -R www-data:www-data /var/www/nextcloud/apps/sharecleanup
